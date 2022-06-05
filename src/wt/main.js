@@ -13,7 +13,7 @@ export const performCalculations = async () => {
                 workerData: data
             })
             worker.on('message', msg=>{
-                res(msg)
+                res({status:'resolve', 'data': msg})
             })
         })
     }
