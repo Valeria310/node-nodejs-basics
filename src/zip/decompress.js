@@ -1,11 +1,9 @@
-import fs from 'fs'
-import commonjsVariables from 'commonjs-variables-for-esmodules'
+import fs from 'fs';
 import path from 'path';
 import zlib from 'zlib';
+import { fileURLToPath } from 'url';
 
-const {
-    __dirname
-} = commonjsVariables(import.meta)
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export const decompress = async () => {
     const read = fs.createReadStream(path.join(__dirname, 'files', 'archive.gz'));

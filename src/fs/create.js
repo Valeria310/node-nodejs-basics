@@ -1,10 +1,8 @@
 import fs from 'fs'
 import path from 'path'
-import commonjsVariables from 'commonjs-variables-for-esmodules'
+import { fileURLToPath } from 'url';
 
-const {
-    __dirname
-} = commonjsVariables(import.meta)
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export const create = async () => {
     fs.access(path.join(__dirname, 'files', 'fresh.txt'), fs.F_OK, (err) => {

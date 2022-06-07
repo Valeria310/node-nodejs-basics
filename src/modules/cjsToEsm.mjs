@@ -2,12 +2,10 @@ import path from 'path'
 import { release, version } from 'os'
 import {createServer} from 'http'
 import './files/c.js'
-import commonjsVariables from 'commonjs-variables-for-esmodules'
+import { fileURLToPath } from 'url';
 
-const {
-    __filename,
-    __dirname
-} = commonjsVariables(import.meta)
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const __filename = fileURLToPath(import.meta.url);
 
 const random = Math.random();
 

@@ -1,10 +1,8 @@
 import crypto from 'crypto'
 import path from 'path';
-import commonjsVariables from 'commonjs-variables-for-esmodules'
+import { fileURLToPath } from 'url';
 
-const {
-    __dirname
-} = commonjsVariables(import.meta)
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export const calculateHash = async () => {
     const hash = crypto.createHash("sha256", path.parse(__dirname, 'files', 'fileToCalculateHashFor.txt'))

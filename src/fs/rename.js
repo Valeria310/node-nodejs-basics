@@ -1,10 +1,8 @@
-import fs from 'fs'
-import commonjsVariables from 'commonjs-variables-for-esmodules'
+import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
-const {
-    __dirname
-} = commonjsVariables(import.meta)
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export const rename = async () => {
     fs.access(path.join(__dirname, 'files', 'properFilename.md'), err=>{
