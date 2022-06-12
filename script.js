@@ -6,8 +6,20 @@ import crypto from 'crypto';
 import zlib from 'zlib';
 import {stdin as input, stdout as output, chdir} from 'process';
 import { pipeline } from 'stream';
+import {showInfo} from'./shared.js';
+import {up} from './nwd/up.js';
+import {cd} from './nwd/cd.js';
+import {ls} from './nwd/ls.js';
+import {cat} from './basic/cat.js';
+import {add} from './basic/add.js';
+import {rn} from './basic/rn.js';
+import {cpFile} from './basic/cp.js';
+import {mv} from './basic/mv.js';
+import {rmFile} from './basic/rm.js';
+import {osFunc} from './os/os.js';
+import {hash} from './hash/hash.js'
 
-const errorText = 'Operation failed\n';
+export const errorText = 'Operation failed\n';
 const readLine = readline.createInterface({input, output});
 const userName = process.argv[2].slice(process.argv[2].indexOf('=')+1);
 
@@ -17,146 +29,12 @@ const exit = () => {
     readLine.close();
 }
 
-const showCurrentDir = () => {
-    const currentDir = path.resolve();
-    output.write(`You are currently in ${currentDir}\n`);
-}
-
-const promtToPrint = () => {
-    output.write("Print your command...\n");
-}
-
-const showInfo = () => {
-    showCurrentDir();
-    promtToPrint();
-}
-
-const up = () => {
-    const currentPath = path.resolve();
-    const root = path.parse(currentPath).root;
-    if(currentPath===root) return;
-    const upDir = path.parse(currentPath).dir;
-    chdir(upDir);
-}
-
-const cd = (desiredPath) => {
-    try {
-        chdir(desiredPath)
-        showInfo();
-    } catch (error) {
-        output.write(errorText);
-    }
-}
-
-const ls = async () => {
-    const currentPath = path.resolve();
-    try {
-        const files = await fs.promises.readdir(currentPath);
-        files.forEach(file => {
-            output.write(file+'\n');
-        })
-        showInfo();
-    } catch (error) {
-        output.write(error)
-    }
-}
-
-const cat = (pathToFile) => {
-    try { 
-        const read = fs.createReadStream(pathToFile);
-        let data = '';
-        read.on('data', chunk => data+=chunk);
-        read.on('end', ()=> {
-            output.write(data+'\n');
-            showInfo();
-        })
-    } catch (error) {
-        output.write(errorText)
-    }
-}
-
-const add = (fileName) => {
-    const pathToFile = path.join(path.resolve(), fileName);
-    fs.access(pathToFile, err => {
-        if(!err) output.write(errorText);
-    })
-    const write = fs.createWriteStream(pathToFile, err => {
-        if(err) output.write(errorText);
-    })
-    write.on('ready', () => {
-        showInfo();
-    })
-}
-
-const rn = (data) => {
-    const oldPathToFile = path.resolve(data.slice(0, data.indexOf(' ')));
-    const newFileName = data.slice(data.indexOf(' ')+1);
-    const newPathToFile = path.join(path.parse(oldPathToFile).dir, newFileName);
-    fs.rename(oldPathToFile, newPathToFile, err => {
-        if(err) {
-            output.write(errorText);
-        }
-        showInfo();
-    })
-} 
-
-const cpFile = (data) => {
-    const pathToFile = path.join(path.resolve(data.slice(0, data.indexOf(' '))));
-    const fileName = path.parse(pathToFile).name;
-    const pathToNewDir = path.join(path.resolve(data.slice(data.indexOf(' ')+1)));
-    fs.access(path.join(pathToNewDir, fileName), err => {
-        if(!err) {
-            output.write('file is already exist '+errorText)
-        }
-    })
-    fs.copyFile(pathToFile, path.join(pathToNewDir, fileName), err => {
-        if(err) {
-            output.write(errorText);
-        }
-        showInfo();
-    })
-}
-
-const mv = (data) => {
-    const pathToFile = path.join(path.resolve(data.slice(0, data.indexOf(' '))));
-    const fileName = path.parse(pathToFile).name;
-    const ext = path.parse(pathToFile).ext;
-    const pathToNewDir = path.join(path.resolve(data.slice(data.indexOf(' ')+1)));
-    console.log(path.join(pathToNewDir, fileName+ext))
-    fs.rename(pathToFile, path.join(pathToNewDir, fileName+ext), err => {
-        if(err) {
-            output.write(errorText);
-        }
-        showInfo();
-    })
-} 
-
-const rmFile = (pathToFile) => {
-    fs.unlink(pathToFile, err => {
-        if(err) {
-            output.write(errorText);
-        }
-        showInfo();
-    })
-}
-
-const hash = (pathToFile) => {
-    fs.readFile(pathToFile, (err, data) => {
-        if(err) {
-            output.write(errorText);
-        }
-        const hash = crypto.createHash("sha256").update(data).digest("hex");
-        output.write(hash+'\n');
-        showInfo();
-    })
-}
-
 const compress = async (data) => {
     const pathToFile = data.slice(0, data.indexOf(' ')); 
     const pathToDestination = data.slice(data.indexOf(' ')+1); 
     fs.access(pathToDestination,  (err) => {
         if(!err) {
-            output.write(errorText);
+            output.write('1');
             showInfo();
         } else {
             const read = fs.createReadStream(pathToFile);
@@ -164,12 +42,12 @@ const compress = async (data) => {
             const brotliCompress = zlib.createBrotliCompress();
             fs.access(pathToFile, (err) => {
                 if(err) {
-                    output.write(errorText);
+                    output.write('2');
                     showInfo();
                 }
                 else{
                     pipeline(read, brotliCompress, write, err => {
-                        if(err) output.write(errorText);
+                        if(err) output.write('3');
                         rmFile(pathToFile);
                     });
                 }
@@ -204,34 +82,6 @@ const decompress = (data) => {
         }
     })
 }
-
-const osFunc = (method) => {
-    switch (method) {
-        case 'EOL':
-            output.write(JSON.stringify(os.EOL)+'\n');
-            break;
-        case 'cpus':
-            const cpus = os.cpus();
-            output.write('amount of CPUS: '+cpus.length+'\n');
-            cpus.forEach(cpu => {
-                output.write(cpu.model + cpu.speed +'\n');
-            })
-            break;
-        case 'homedir':
-            output.write(os.homedir()+'\n');
-            break;
-        case 'username':
-            output.write(os.userInfo().username+'\n');
-            break;
-        case 'architecture':
-            output.write(os.arch()+'\n');
-            break;
-        default:
-            output.write(errorText);
-            break;
-    }
-    showInfo();
-} 
 
 readLine.on('line', async input => {
     if(input==='.exit') {
